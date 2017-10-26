@@ -23,3 +23,7 @@ function songchu(s)
 	}
 	return string;
 }
+
+function stringToArray(string) {
+	return string.split("<br>");
+}
