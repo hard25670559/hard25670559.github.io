@@ -18,12 +18,9 @@ function songchu(s)
 	{
         if (s[a].checked)
 		{
-			string = s[a].value + string + '<br>';
+			string = s[a].value  + '<br>' + string;
 		}	
 	}
 	return string;
 }
 
-function stringToArray(string) {
-	return string.split("<br>");
-}
