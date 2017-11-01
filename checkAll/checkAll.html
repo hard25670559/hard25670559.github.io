@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>無標題文件</title>
+</head>
+
+<body>
+
+
+<form name="my_form">
+<input type="checkbox" name="list" value="1" id=""/>1 <br>
+<input type="checkbox" name="list" value="2"/>2<br>
+<input type="checkbox" name="list" value="3"/>3<br>
+<input type="button" name="checkALL" value="check_ALL" onclick="checkAll(document.my_form.list)">
+<input type="button" name="uncheckALL" value="uncheck_ALL" onclick="uncheckAll(document.my_form.list)">
+<input type="button" name=" songchu" value="songchu" onclick="songchu(document.my_form.list)" />
+ <label id="lb"></label>
+</form>
+<script>
+
+function checkAll(t)
+{
+for (i = 0; i < t.length; i++)
+	t[i].checked = true ;
+}
+function uncheckAll(f)
+{
+for (i = 0; i < f.length; i++)
+	f[i].checked = false ;
+}
+function songchu(s)
+{
+	var i =document.getElementById("lb");
+	var string = '';
+	for(a=0;a<s.length;a++)
+	{
+        if (s[a].checked)
+		{
+			
+			string = s[a].value + string;
+			console.log('done');
+		}
+		console.log(a);
+		
+	}
+
+		
+		return string;
+		
+    
+}
+
+
+</script>
+
+</body>
+</html>
