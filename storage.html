@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Document</title>
+    </head>
+    <body>
+
+        <h1>stotage</h1>
+
+        <input type="file" id="file" >
+        <input type="button" onclick="getFile()">
+        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/4.8.0/firebase.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+
+        <script>
+            var config = {
+                apiKey: "AIzaSyDYyRD38KTqPLe3VPA5kSVXwq10vBmjmWQ",
+                authDomain: "clean-phoenix-483.firebaseapp.com",
+                databaseURL: "https://clean-phoenix-483.firebaseio.com",
+                projectId: "clean-phoenix-483",
+                storageBucket: "clean-phoenix-483.appspot.com",
+                messagingSenderId: "408658909261"
+            };
+
+            firebase.initializeApp(config);
+            var storage = firebase.storage().ref();
+
+            storage.child('images');
+
+
+
+            console.log(storage);
+            var file = null;
+
+            function getFile() {
+                file = $('#file').prop('files');
+                console.log(file);
+
+                storage.put(file).then(function (data) {
+                    console.log("uploaded a blob or file!");
+                });
+            }
+        </script>
+    </body>
+</html>
