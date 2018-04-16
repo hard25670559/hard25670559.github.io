@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.3.0/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://editor-latest.s3.amazonaws.com/css/froala_editor.pkgd.min.css">
+  <link rel="stylesheet" href="https://editor-latest.s3.amazonaws.com/css/froala_style.min.css">
+</head>
+<body>
+
+  <div id="froala-editor">
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.3.0/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.3.0/mode/xml/xml.min.js"></script>
+  <script src="https://editor-latest.s3.amazonaws.com/js/froala_editor.pkgd.min.js"></script>
+
+  <script>
+    $(function() {
+
+      $.FroalaEditor.DefineIcon('my_dropdown', {NAME: 'edit'});
+      $.FroalaEditor.RegisterCommand('my_dropdown', {
+        title: '插入合約資料',
+        type: 'dropdown',
+        focus: false,
+        undo: false,
+        refreshAfterCallback: true,
+        options: {
+          '{{ license_plate }}': '租借車牌',
+          '{{ order_id }}': '單號',
+          '{{ birthday }}': '生日',
+          '{{ id }}': '身分證',
+          '{{ phone }}': '電話',
+          '{{ start_time }}': '租借時間',
+          '{{ end_time }}': '歸還時間',
+          '{{ diff }}': '甲租乙還',
+        },
+        callback: function (cmd, val) {
+          this.html.insert(val);
+          this.undo.saveStep();
+        },
+        // Callback on refresh.
+        refresh: function ($btn) {
+          console.log ('do refresh');
+        },
+        // Callback on dropdown show.
+        refreshOnShow: function ($btn, $dropdown) {
+          console.log ('do refresh when show');
+        }
+      });
+
+      $.FroalaEditor.DefineIcon('save', {NAME: 'save'});
+      $.FroalaEditor.RegisterCommand('save', {
+        title: '存檔',
+        focus: false,
+        undo: false,
+        refreshAfterCallback: false,
+        callback: function () {
+          console.log($('#froala-editor').froalaEditor('html.get'));
+        }
+      });
+      
+      $('div#froala-editor').froalaEditor({
+        toolbarButtons: [
+          'undo', 'redo', 'my_dropdown' , 'fontSize', 'bold', 'italic', 'underline', 'paragraphFormat', 'align', 'formatOL', 'formatUL', 'outdent', 'indent', 'color', 'print', 'fullscreen', 'alert'
+        ]
+      })
+      
+    });
+
+  </script>
+</body>
+</html>
