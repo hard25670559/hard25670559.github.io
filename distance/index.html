@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+
+    
+
+    <div>
+	    <input id="origins_a" type="text">
+	    <input id="origins_b" type="text">	
+    </div>
+
+    <div>
+    	<input id="destinations_a" type="text">
+    	<input id="destinations_b" type="text">
+    </div>
+
+    <div>
+    	<input type="button" value="查詢" id="search">
+    </div>
+    
+	<p id="origin_addresses"></p>
+	<p id="destination_addresses"></p>
+	<p id="distance"></p>
+	<p id="duration"></p>
+
+	<script>
+
+		$('#search').on('click', function(event) {
+			getDistance();
+		});
+
+		function getDistance() {
+			$.ajax({
+				url: 'https://maps.googleapis.com/maps/api/distancematrix/json?mode=driving&origins=' + $('#origins_a').val() + ',' + $('#origins_b').val() + '&destinations=' + $('#destinations_a').val() + ',' + $('#destinations_b').val() + '&key=AIzaSyCq2MsKDoftMjtJGuS-0HOI4ZEJelckXY0',
+				type: 'get',
+				dataType: 'json',
+			})
+			.done(function(data) {
+				$('#origin_addresses').empty();
+				$('#destination_addresses').empty();
+				$('#distance').empty();
+				$('#duration').empty();
+
+				$('#origin_addresses').text('起始：' + data.origin_addresses);
+				$('#destination_addresses').text('終點：' + data.destination_addresses);
+				$('#distance').text('兩點距離：' + data.rows[0].elements[0].distance.text);
+				$('#duration').text('行駛時間：' + data.rows[0].elements[0].duration.text);
+
+			})
+			.fail(function() {
+				console.log("error");
+			})
+			.always(function() {
+				console.log("complete");
+			});
+		}
+		
+	</script>
+
+</body>
+</html>
