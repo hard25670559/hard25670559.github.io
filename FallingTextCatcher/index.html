@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>落字接龍｜Falling Text Catcher</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #000;
+        color: #fff;
+        font: 16px/1.4 system-ui, -apple-system, "Noto Sans TC", "PingFang TC",
+          "Microsoft JhengHei", sans-serif;
+        position: relative;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+      }
+      .hud {
+        position: fixed;
+        inset: 12px auto auto 12px;
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 2;
+      }
+
+      .login-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        z-index: 10;
+      }
+      .login-input,
+      .login-btn {
+        width: 350px;
+        height: 56px;
+        border: 3px solid #ff2d12;
+        background: transparent;
+        color: #ff2d12;
+        font-size: 2rem;
+        text-align: center;
+        outline: none;
+        margin: 0;
+        box-sizing: border-box;
+        border-radius: 0;
+        transition: border-color 0.2s, background 0.2s, color 0.2s;
+      }
+      .login-input:focus,
+      .login-input.active {
+        border-color: #00ff4a !important;
+        background: transparent;
+        color: #ff2d12;
+      }
+      .login-input[disabled] {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      .login-input:focus {
+        border-color: #ff4d2d;
+      }
+      .login-btn {
+        cursor: pointer;
+        background: transparent;
+        font-family: inherit;
+      }
+      .login-btn:hover {
+        border-color: #ff4d2d;
+        color: #ff4d2d;
+      }
+      .hud h1 {
+        margin: 0 0 4px;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        font-weight: 700;
+      }
+      .hud p {
+        margin: 0;
+        font-size: 12px;
+        opacity: 0.85;
+      }
+      .hud kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
+        font-size: 11px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <div class="login-container">
+      <input class="login-input" type="text" placeholder="帳號" readonly />
+      <input class="login-input" type="password" placeholder="密碼" readonly />
+      <button class="login-btn" type="button">登入</button>
+    </div>
+    <div class="hud" aria-hidden="true">
+      <h1>落字接龍</h1>
+      <p>
+        用 <kbd>←</kbd> <kbd>→</kbd> 或滑鼠移動下方白色 Bar。<br />接到文字會在
+        <strong>點擊到的輸入框</strong> 輸入文字，刪除的部分請使用
+        <kbd>Backspace</kbd> 鍵刪除。
+      </p>
+    </div>
+
+    <script>
+      // 高亮 readonly 輸入框：滑鼠點擊時加上 active class
+      document.querySelectorAll(".login-input").forEach(function (input) {
+        input.addEventListener("click", function (e) {
+          document.querySelectorAll(".login-input").forEach(function (i) {
+            i.classList.remove("active");
+          });
+          input.classList.add("active");
+          e.stopPropagation();
+        });
+      });
+      document.body.addEventListener("click", function () {
+        document.querySelectorAll(".login-input").forEach(function (i) {
+          i.classList.remove("active");
+        });
+      });
+
+      // 封裝輸入文字功能
+      function appendCharToFocusedInput(char) {
+        var active = document.querySelector(".login-input.active");
+        if (active && active.hasAttribute("readonly")) {
+          active.value += char;
+        }
+      }
+      // 只保留 Backspace 刪除功能
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Backspace") {
+          var active = document.querySelector(".login-input.active");
+          if (active && active.hasAttribute("readonly")) {
+            active.value = active.value.slice(0, -1);
+          }
+        }
+      });
+      (() => {
+        // ===== Canvas & DPI =====
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        function resize() {
+          const DPR = window.devicePixelRatio || 1;
+          const w = Math.floor(window.innerWidth);
+          const h = Math.floor(window.innerHeight);
+          canvas.width = Math.floor(w * DPR);
+          canvas.height = Math.floor(h * DPR);
+          canvas.style.width = w + "px";
+          canvas.style.height = h + "px";
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0); // Draw in CSS pixel coordinates
+        }
+        addEventListener("resize", resize);
+        resize();
+
+        // ===== Game State =====
+        const CHARSET =
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz!@#$%^&*()_+}{|\\":;/.,][<>'; // 字元集
+        const letters = []; // active falling letters
+        const gravityMin = 100; // px/s
+        const gravityMax = 280; // px/s
+        let spawnEvery = 350; // ms (平均生成間隔)
+        let lastSpawn = 0;
+        let lastTime = 0;
+
+        const paddle = {
+          width: Math.max(100, Math.min(220, window.innerWidth * 0.18)),
+          height: 12,
+          x: window.innerWidth / 2,
+          get y() {
+            return window.innerHeight - 30;
+          },
+          speed: 520, // keyboard speed px/s
+        };
+
+        function updatePaddleWidth() {
+          paddle.width = Math.max(100, Math.min(260, window.innerWidth * 0.18));
+        }
+        addEventListener("resize", updatePaddleWidth);
+
+        // ===== Controls =====
+        const keys = new Set();
+        addEventListener("keydown", (e) => {
+          const k = e.key.toLowerCase();
+          if (
+            k === "arrowleft" ||
+            k === "arrowright" ||
+            k === "a" ||
+            k === "d"
+          ) {
+            keys.add(k);
+            e.preventDefault();
+          }
+        });
+        addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+
+        addEventListener("mousemove", (e) => {
+          paddle.x = e.clientX;
+        });
+        addEventListener(
+          "touchmove",
+          (e) => {
+            if (e.touches[0]) paddle.x = e.touches[0].clientX;
+          },
+          { passive: true }
+        );
+
+        // ===== Helpers =====
+        const rand = (min, max) => Math.random() * (max - min) + min;
+        const pickChar = () =>
+          CHARSET[Math.floor(Math.random() * CHARSET.length)];
+
+        function makeLetter() {
+          const char = pickChar();
+          const fontSize = Math.round(rand(60, 100));
+          ctx.font = `${fontSize}px system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif`;
+          const w = Math.ceil(ctx.measureText(char).width);
+          const x = Math.max(
+            w / 2,
+            Math.min(window.innerWidth - w / 2, rand(6, window.innerWidth - 6))
+          );
+          const y = -fontSize; // just above top
+          const speed = rand(gravityMin, gravityMax);
+          return { char, x, y, w, h: fontSize, speed, fontSize };
+        }
+
+        // ===== Loop =====
+        function loop(ts) {
+          if (!lastTime) lastTime = ts;
+          const dt = (ts - lastTime) / 200; // seconds
+          lastTime = ts;
+
+          // Spawn (Poisson-like jitter)
+          if (ts - lastSpawn > rand(spawnEvery * 0.6, spawnEvery * 1.4)) {
+            letters.push(makeLetter());
+            lastSpawn = ts;
+          }
+
+          // Keyboard movement
+          const left = keys.has("arrowleft") || keys.has("a");
+          const right = keys.has("arrowright") || keys.has("d");
+          if (left && !right) paddle.x -= paddle.speed * dt;
+          if (right && !left) paddle.x += paddle.speed * dt;
+          paddle.x = Math.max(
+            paddle.width / 2,
+            Math.min(window.innerWidth - paddle.width / 2, paddle.x)
+          );
+
+          // Update letters
+          for (let i = letters.length - 1; i >= 0; i--) {
+            const L = letters[i];
+            L.y += L.speed * dt;
+
+            // Collision with paddle
+            const px = paddle.x - paddle.width / 2;
+            const py = paddle.y;
+            if (
+              L.y + L.h >= py &&
+              L.y <= py + paddle.height &&
+              L.x + L.w / 2 >= px &&
+              L.x - L.w / 2 <= px + paddle.width
+            ) {
+              console.log("Caught:", L.char); // ★ 抓到就輸出字元
+              appendCharToFocusedInput(L.char);
+              letters.splice(i, 1);
+              continue;
+            }
+
+            // Off-screen cleanup
+            if (L.y > window.innerHeight + L.h) letters.splice(i, 1);
+          }
+
+          // Draw
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Letters
+          ctx.textBaseline = "top";
+          ctx.fillStyle = "#fff";
+          for (const L of letters) {
+            ctx.font = `${L.fontSize}px system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif`;
+            ctx.fillText(L.char, L.x - L.w / 2, L.y);
+          }
+
+          // Paddle
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(
+            paddle.x - paddle.width / 2,
+            paddle.y,
+            paddle.width,
+            paddle.height
+          );
+
+          requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+
+        // Pause time accumulation when tab hidden
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) lastTime = 0;
+        });
+      })();
+    </script>
+  </body>
+</html>
