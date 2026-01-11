@@ -1,0 +1,21 @@
+:root{
+  --marquee-border-width:1px;
+  --marquee-border-style:solid;
+  --marquee-border-color:#409eff;
+  --marquee-bg-color:rgba(64,158,255,.2);
+  --marquee-z-index:9999;
+}
+.marquee-selection-box{
+  background-color:var(--marquee-bg-color);
+  border:var(--marquee-border-width) var(--marquee-border-style) var(--marquee-border-color);
+  display:none;
+  pointer-events:none;
+  position:absolute;
+  z-index:var(--marquee-z-index);
+}
+.marquee-selection-box.active{
+  display:block;
+}
+.disable-user-select{
+  user-select:none !important;
+}
